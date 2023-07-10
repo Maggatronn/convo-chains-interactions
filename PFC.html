@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <link rel="stylesheet"
+          href="https://fonts.googleapis.com/css?family=Share+Tech+Mono">
+    <style>
+      body {
+        background-color: black;
+      }
+    </style>
+    <script src="https://d3js.org/d3.v4.min.js"></script>
+    <script src="https://unpkg.com/d3-simple-slider"></script>
+    <script
+      src="https://code.jquery.com/jquery-3.2.1.min.js"
+      integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4="
+      crossorigin="anonymous"></script>
+    <p id="value"></p>
+    <div id="slider"></div>
+  </head>
+  <body>
+    <script>
+    var graph;
+
+    var nodeData, linkData, link, node, strength;
+    var nodeByID = {};
+    var width = 1500;
+    var height = 900;
+  // let yScale = d3.scaleLinear()
+  //   .domain([5, 3028])
+  //   .range([0,height])
+  // let xScale = d3.scaleLinear()
+  //   .domain([0,1])
+  //   .range([0,width])
+  // let colorScale = d3.scaleLinear()
+  //     .domain([0,1])
+  //     .range([0,255])
+  // let lineScale = d3.scaleLinear()
+  //   .domain([0,1])
+  //   .range([0.5,3])
+
+
+  const svg = d3.select("body").append("svg")
+    .attr("width", width)
+    .attr("height", height)
+
+
+  var tooltip_width = "500px"
+  var tooltip = d3.select("body").append("g")
+    .style("opacity", 0)
+    .attr("font", "8px sans-serif")
+    .attr("x", 0)
+    .attr("y", 0)
+    .style("position", "absolute")
+    .attr("class", "tooltip")
+    .style("border-radius", "5px")
+    .style("width", tooltip_width)
+    .style("padding", "10x")
+    .html(nodeData)
+
+  d3.json("rtfc_highlight_embed.json", function(error, data) {
+
+    console.log(data)
+    nodeData = data.nodes.filter(function(d) { return d });
+
+    var rect = svg.append("svg:rect")
+              .attr("width", width)
+              .attr("height", height)
+              .attr("fill", "black");
+
+    var node = svg.append("g")
+        .attr("class", "nodes")
+      .selectAll("circle")
+      .data(nodeData)
+      .enter().append("circle")
+        .attr("r", 4)
+        .attr("fill", function(d) {
+          return 'white'
+          })
+        .attr('cx', function(d) {
+          return d.x_trans
+          })
+        .attr('cy', function(d) {
+          return d.y_trans
+        })
+        .on("mouseover", function(d) {
+          console.log(nodeData)
+            tooltip
+              .transition()
+              .duration(1000)
+            tooltip
+              .style("opacity", 1)
+              .style("font", "12px mono")
+              .style("font-family", 'Share Tech Mono')
+              .style("color", "white")
+              .style("padding", "10px")
+              .html(nodeData)
+              .style("left", String(width/2 - 250) + "px")
+              .style("top",  String(height - 50) + "px")
+              .text(d.words)
+              .style("background", "none")
+              .style("width", tooltip_width)
+            d3.select(".nodes")
+              .transition()
+              .duration(500)
+              .selectAll("circle")
+              .attr("fill", 'white')
+          })
+        })
+
+// console.log(nodeData)
+
+    </script>
+
+    <!-- <input type="range" name="mySlider" id=mySlider min="10" max="100" value="50"> -->
+  </body>
+</html>
