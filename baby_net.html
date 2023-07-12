@@ -125,8 +125,8 @@
       simulation.alpha(1).restart();
     });
 
-    d3.json("rtfc_embed_list_full_2d.json", function(data){
-  // d3.json("multi_set_five.json", function(data) {
+    // d3.json("rtfc_embed_list_full_2d.json", function(data){
+  d3.json("multi_set_five.json", function(data) {
   // d3.json("updated.json", function(data) {
 
     data.nodes.forEach(function(n) {
@@ -134,16 +134,16 @@
     	});
 
     nodeData = data.nodes.filter(function(d) {
-      if(d.collection == 114){
+      // if(d.collection == 114){
             return d
-          }
+          // }
   	});
     linkData = data.edges.filter(function(d) {
 
       source = String(d.source)
-      if(d.collection == 114){
+      // if(d.collection == 114){
             return d
-          }
+          // }
   	});
 
     var rect = svg.append("svg:rect")
