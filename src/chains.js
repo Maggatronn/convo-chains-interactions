@@ -303,7 +303,7 @@ function onDataLoad(data) {
   d3.select("#slider")
     .append("svg")
     .attr("width", 500)
-    .attr("height", 100)
+    .attr("height", 80)
     .append("g")
     .attr("transform", "translate(30,30)")
     .call(slider);

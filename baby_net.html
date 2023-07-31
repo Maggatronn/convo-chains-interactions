@@ -10,6 +10,12 @@
       body {
         background-color: black;
       }
+      .controls {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px;
+      }
     </style>
     <script src="https://d3js.org/d3.v4.min.js"></script>
     <script src="https://unpkg.com/d3-simple-slider"></script>
@@ -20,18 +26,19 @@
     ></script>
   </head>
   <body>
-    <p id="value"></p>
-    <div id="slider"></div>
-    <select id="collectionSelect">
-      <option value="all">All Conversation Collections</option>
-      <!-- Add more options as needed -->
-      <option value="150">150</option>
-      <option value="114">114</option>
-      <option value="1">1</option>
-      <option value="3">3</option>
-      <option value="24">24</option>
-      <option value="27">27</option>
-    </select>
+    <div class="controls">
+      <div id="slider"></div>
+      <select id="collectionSelect">
+        <option value="all">All Conversation Collections</option>
+        <!-- Add more options as needed -->
+        <option value="150">150</option>
+        <option value="114">114</option>
+        <option value="1">1</option>
+        <option value="3">3</option>
+        <option value="24">24</option>
+        <option value="27">27</option>
+      </select>
+    </div>
   </body>
   <script src="src/chains.js"></script>
 </html>
