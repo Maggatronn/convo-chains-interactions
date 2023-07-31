@@ -1,46 +1,14 @@
-var graph;
+let nodeData, linkData, link, node, strength;
+const width = 1500;
+const height = 900;
 
-var nodeData, linkData, link, node, strength;
-var nodeByID = {};
-// var width = $(window).width();
-// var height = $(window).height();
-var width = 1500;
-var height = 900;
-
-// nodeData = [
-//   {"id": 1, "rootx": 100, "rooty": 100, "loc": "start"},
-//   {"id": 2, "rootx": 100, "rooty": 100, "loc": "mid"},
-//   {"id": 3, "rootx": 200, "rooty": 110, "loc": "mid"},
-//   {"id": 4, "rootx": 200, "rooty": 140, "loc": "mid"},
-//   {"id": 5, "rootx": 40, "rooty": 300, "loc": "end"},
-//   {"id": 6, "rootx": 200, "rooty": 200, "loc": "start"},
-//   {"id": 7, "rootx": 300, "rooty": 300, "loc": "mid"},
-//   {"id": 8, "rootx": 300, "rooty": 400, "loc": "mid"},
-//   {"id": 9, "rootx": 400, "rooty": 400, "loc": "mid"},
-//   {"id": 10, "rootx": 300, "rooty": 400, "loc": "end"}
-// ]
-//
-// linkData = [
-//   {"source": 1, "target": 2},
-//   {"source": 2, "target": 3},
-//   {"source": 3, "target": 4},
-//   {"source": 4, "target": 5},
-//   {"source": 6, "target": 7},
-//   {"source": 7, "target": 8},
-//   {"source": 8, "target": 9},
-//   {"source": 9, "target": 10}
-// ]
 let yScale = d3
   .scaleLinear()
   // .domain([1378,1635])
   .domain([5, 3028])
   .range([0, height]);
 let xScale = d3.scaleLinear().domain([0, 1]).range([0, width]);
-let colorScale = d3.scaleLinear().domain([0, 1]).range([0, 255]);
-let lineScale = d3.scaleLinear().domain([0, 1]).range([0.5, 3]);
 
-// var topics_color = ["#F5770C", "#DE4600", "#E81C0C", "#F20C46", "#DB00A5", "#8E0CE8", "#0C47F2", "#12E154", "#B7E101", "#F7EC0C"]
-// var topics_color = ["#F5770C", "#DE4600", "#0C47F2", "#12E154", "#B7E101", "#F7EC0C"]
 var topics_color = [
   "#F07800",
   "#E10901",
@@ -57,7 +25,6 @@ var topics_color = [
 var collections = [150, 114, 1, 3, 24, 27];
 var color = d3.scaleOrdinal().domain([0, 12]).range(topics_color);
 var hoverwave = d3.scaleLinear().domain([0, 200]).range([5, 1]);
-// var color = d3.scaleOrdinal().domain(collections).range(topics_color)
 
 var simulation = d3
   .forceSimulation()
@@ -79,7 +46,7 @@ const svg = d3
   .attr("width", width)
   .attr("height", height);
 
-var tooltip_width = "500px";
+const tooltipWidth = "500px";
 var tooltip = d3
   .select("body")
   .append("g")
@@ -90,28 +57,12 @@ var tooltip = d3
   .style("position", "absolute")
   .attr("class", "tooltip")
   .style("border-radius", "5px")
-  .style("width", tooltip_width)
+  .style("width", tooltipWidth)
   .style("padding", "10x")
   .html(nodeData);
 
-simulation.force(
-  "y",
-  d3
-    .forceY()
-    .y(function (d) {
-      return d.rooty * 0 + yScale(d.conversation) * 0;
-    })
-    .strength(0)
-);
-simulation.force(
-  "x",
-  d3
-    .forceX()
-    .x(function (d) {
-      return d.rootx * 0 + xScale(d.convo_prop_index) * 0;
-    })
-    .strength(0)
-);
+simulation.force("y", d3.forceY().y(0).strength(0));
+simulation.force("x", d3.forceX().x(0).strength(0));
 
 var slider = d3
   .sliderHorizontal()
@@ -192,20 +143,8 @@ d3.json("multi_set_five.json", function (data) {
 });
 
 function onDataLoad(data) {
-  data.nodes.forEach(function (n) {
-    nodeByID[n.id] = n;
-  });
-
-  nodeData = data.nodes.filter(function (d) {
-    // if(d.collection == 114){
-    return d;
-    // }
-  });
-  linkData = data.edges.filter(function (d) {
-    // if(d.collection == 114){
-    return d;
-    // }
-  });
+  nodeData = data.nodes;
+  linkData = data.edges;
 
   var rect = svg
     .append("svg:rect")
@@ -269,7 +208,7 @@ function onDataLoad(data) {
         // .style("text-anchor", "middle")
         .text(d.words)
         .style("background", "none")
-        .style("width", tooltip_width);
+        .style("width", tooltipWidth);
       d3.select(".nodes")
         .transition()
         .duration(500)
@@ -313,7 +252,6 @@ function onDataLoad(data) {
         })
         .attr("stroke-width", function (o) {
           if (o.source.conversation === d.conversation) {
-            // return lineScale(o.source.convo_prop_index)
             return 1;
           } else {
             return 0;
@@ -401,26 +339,5 @@ function onDataLoad(data) {
         ")"
       );
     });
-  }
-
-  function restart() {
-    // Apply the general update pattern to the nodes.
-    node = node.data(nodeData, function (d) {
-      return d.id;
-    });
-    node.exit().remove();
-    node = node.enter().append("circle").merge(node);
-
-    // Apply the general update pattern to the links.
-    link = link.data(linkData, function (d) {
-      return d.source.id + "-" + d.target.id;
-    });
-    link.exit().remove();
-    link = link.enter().append("path").merge(link);
-
-    // Update and restart the simulation.
-    simulation.nodes(nodeData);
-    simulation.force("link").links(linkData);
-    simulation.alpha(0.1).restart();
   }
 }
