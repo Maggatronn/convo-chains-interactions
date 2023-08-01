@@ -26,10 +26,18 @@
         stroke: white;
         stroke-width: 2px;
         opacity: 1;
+
+        /* transition the opacity of the circle */
+        transition: opacity 0.2s ease-in-out;
+        /* transition the stroke width of the circle */
+        transition: stroke-width 0.2s ease-in-out;
       }
 
       circle.moused-over-conversation {
         opacity: 1;
+
+        /* transition the opacity of the circle */
+        transition: opacity 0.2s ease-in-out;
       }
 
       circle.moused-over-node {
@@ -41,6 +49,8 @@
         fill: #f6b092; /* color for selected nodes */
         opacity: 1;
         r: 5;
+        /* transition the color of the circle */
+        transition: fill 0.2s ease-in-out;
       }
 
       circle.not-selected {
