@@ -142,6 +142,20 @@ d3.json("multi_set_five.json", function (data) {
   onDataLoad(data);
 });
 
+let toFind = "machine";
+d3.select("#search").on("input", function () {
+  toFind = this.value;
+  d3.select(".nodes")
+    .selectAll("circle")
+    .classed("matched", function (d) {
+      if (!toFind) return false; // if nothing to find, remove the 'matched' class
+      const sentence = d.words;
+      const regex = new RegExp("\\b" + toFind + "\\b");
+      const words = sentence.match(regex);
+      return !!words; // this will return true if there are any matches, false otherwise
+    });
+});
+
 function onDataLoad(data) {
   nodeData = data.nodes;
   linkData = data.edges;
@@ -153,12 +167,8 @@ function onDataLoad(data) {
     .attr("fill", "black")
     .on("click", function (d) {
       tooltip.transition().duration(500).style("opacity", 0);
-      d3.select(".nodes")
-        .transition()
-        .duration(500)
-        .selectAll("circle")
-        .attr("r", 1)
-        .attr("opacity", 1);
+      d3.select(".nodes").selectAll("circle").classed("selected", false);
+      d3.select(".nodes").selectAll("circle").classed("not-selected", false);
       d3.select(".links")
         .transition()
         .duration(500)
@@ -189,9 +199,17 @@ function onDataLoad(data) {
     .enter()
     .append("circle")
     .attr("r", 1)
-    .attr("fill", "white")
+    // .attr("fill", "white")
     // .call(drag(simulation))
     .on("mouseover", function (d) {
+      d3.select(this).classed("moused-over-node", true);
+      const hoveredConversation = d.conversation;
+      d3.select(".nodes")
+        .selectAll("circle")
+        .classed("moused-over-conversation", function (o) {
+          return o.conversation === hoveredConversation;
+        });
+
       tooltip.transition().duration(1000);
       tooltip
         .style("opacity", 1)
@@ -213,9 +231,9 @@ function onDataLoad(data) {
         .transition()
         .duration(500)
         .selectAll("circle")
-        .attr("fill", function (o) {
-          return color(o.kmeans);
-        })
+        // .attr("fill", function (o) {
+        //   return color(o.kmeans);
+        // })
         // .attr("r", function(o){ if (getDistance(o.rootx, d.rootx, o.rooty, d.rooty) < 50){
         //   return getDistance(o.rootx, d.rootx, o.rooty, d.rooty)/50 }
         //   else {return 3}
@@ -236,6 +254,18 @@ function onDataLoad(data) {
         });
     })
     .on("click", function (d) {
+      const selectedConversation = d.conversation;
+      d3.select(".nodes")
+        .selectAll("circle")
+        .classed("selected", function (o) {
+          return o.conversation === selectedConversation;
+        });
+      d3.select(".nodes")
+        .selectAll("circle")
+        .classed("not-selected", function (o) {
+          return o.conversation !== selectedConversation;
+        });
+
       d3.select(".links")
         .transition()
         .duration(500)
@@ -258,25 +288,13 @@ function onDataLoad(data) {
           }
         })
         .attr("fill", "none");
+    })
+    .on("mouseout", function (d) {
+      d3.select(this).classed("moused-over-node", false);
       d3.select(".nodes")
-        .transition()
-        .duration(500)
         .selectAll("circle")
-        .attr("fill", function (d) {
-          return color(d.kmeans);
-        })
-        // .attr("fill", 'white')
-        .attr("r", function (o) {
-          if (o.conversation === d.conversation) {
-            // return o.words.length/50
-            return 5;
-          } else {
-            return 0;
-          }
-        })
-        .attr("opacity", 1);
+        .classed("moused-over-conversation", false);
     });
-
   simulation.nodes(nodeData).on("tick", ticked);
 
   simulation.force("link").links(linkData);
@@ -317,27 +335,44 @@ function onDataLoad(data) {
     return context; // not mandatory, but will make it easier to chain operations
   }
 
-  function ticked(data) {
+  function ticked() {
     link.attr("d", function (d) {
-      var offset = 50;
-      return draw(
-        d3.path(),
-        d.source.x,
-        d.source.y,
-        d.target.x,
-        d.target.y,
-        offset
-      );
+      var dx = d.target.x - d.source.x,
+        dy = d.target.y - d.source.y,
+        dr = Math.sqrt(dx * dx + dy * dy); // distance
+      if (dr > 150) {
+        // draw an arc if the nodes are sufficiently far apart
+        return (
+          "M" +
+          d.source.x +
+          "," +
+          d.source.y +
+          "A" +
+          dr +
+          "," +
+          dr +
+          " 0 0,1 " +
+          d.target.x +
+          "," +
+          d.target.y
+        );
+      } else {
+        // draw a straight line if the nodes are too close
+        return (
+          "M" +
+          d.source.x +
+          "," +
+          d.source.y +
+          "L" +
+          d.target.x +
+          "," +
+          d.target.y
+        );
+      }
     });
 
     node.attr("transform", function (d) {
-      return (
-        "translate(" +
-        Math.max(-30, Math.min(width + 30, d.x)) +
-        "," +
-        Math.max(-30, Math.min(height + 30, d.y)) +
-        ")"
-      );
+      return "translate(" + d.x + "," + d.y + ")";
     });
   }
 }

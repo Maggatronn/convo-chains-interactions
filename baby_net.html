@@ -16,6 +16,36 @@
         align-items: center;
         padding: 20px;
       }
+
+      circle {
+        fill: white; /* default color */
+        opacity: 0.5;
+      }
+
+      circle.matched {
+        stroke: white;
+        stroke-width: 2px;
+        opacity: 1;
+      }
+
+      circle.moused-over-conversation {
+        opacity: 1;
+      }
+
+      circle.moused-over-node {
+        stroke: white;
+        stroke-width: 3px;
+      }
+
+      circle.selected {
+        fill: #f6b092; /* color for selected nodes */
+        opacity: 1;
+        r: 5;
+      }
+
+      circle.not-selected {
+        r: 1;
+      }
     </style>
     <script src="https://d3js.org/d3.v4.min.js"></script>
     <script src="https://unpkg.com/d3-simple-slider"></script>
@@ -27,17 +57,18 @@
   </head>
   <body>
     <div class="controls">
-      <div id="slider"></div>
       <select id="collectionSelect">
         <option value="all">All Conversation Collections</option>
         <!-- Add more options as needed -->
-        <option value="150">150</option>
-        <option value="114">114</option>
         <option value="1">1</option>
         <option value="3">3</option>
         <option value="24">24</option>
         <option value="27">27</option>
+        <option value="114">114</option>
+        <option value="150">150</option>
       </select>
+      <div id="slider"></div>
+      <input type="text" id="search" value="" placeholder="Search" />
     </div>
   </body>
   <script src="src/chains.js"></script>
