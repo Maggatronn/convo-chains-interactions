@@ -137,6 +137,9 @@ d3.json("multi_set_five.json", function (data) {
       d3.select(".nodes").remove();
 
       onDataLoad({ nodes: nodeData, edges: linkData });
+
+      // TODO: this gets the pulsing, but it makes it unstable...
+      // repeat();
     });
 
   onDataLoad(data);
@@ -155,6 +158,31 @@ d3.select("#search").on("input", function () {
       return !!words; // this will return true if there are any matches, false otherwise
     });
 });
+
+function repeat() {
+  // select all circles
+  var circles = d3.selectAll("circle");
+
+  // choose a random subset of nodes
+  var subset = circles.filter(function (d, i) {
+    return Math.random() < 0.5; // 50% chance of being selected
+  });
+
+  subset
+    .transition() // apply a transition
+    .duration(function () {
+      return 500 + Math.random() * 1000; // random duration between 500 and 1500 ms
+    })
+    .attr("r", function () {
+      return 1 + Math.random() * 2; // random radius between 1 and 10
+    })
+    .transition() // apply a second transition
+    .duration(function () {
+      return 500 + Math.random() * 1000; // random duration between 500 and 1500 ms
+    })
+    .attr("r", 1) // change the radius attribute back to 1
+    .on("end", repeat); // when the second transition finishes, restart the function
+}
 
 function onDataLoad(data) {
   nodeData = data.nodes;
@@ -326,21 +354,12 @@ function onDataLoad(data) {
     .attr("transform", "translate(30,30)")
     .call(slider);
 
-  function draw(context, x1, y1, x2, y2, f) {
-    context.moveTo(x1, y1);
-    // context.lineTo(x1, y1); // draw straight line to ⟨100,10⟩
-    context.arcTo(x1, y1, x2, y2, f); // draw an arc, the turtle ends up at ⟨194.4,108.5⟩
-    context.lineTo(x2, y2); // draw straight line to ⟨300,10⟩
-    // etc.
-    return context; // not mandatory, but will make it easier to chain operations
-  }
-
   function ticked() {
     link.attr("d", function (d) {
       var dx = d.target.x - d.source.x,
         dy = d.target.y - d.source.y,
         dr = Math.sqrt(dx * dx + dy * dy); // distance
-      if (dr > 150) {
+      if (dr > 100) {
         // draw an arc if the nodes are sufficiently far apart
         return (
           "M" +
