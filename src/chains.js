@@ -1,6 +1,9 @@
 let nodeData, linkData, link, node, strength;
-const width = 1500;
-const height = 900;
+
+// const width = 1500;
+// const height = 900;
+const width = window.innerWidth;
+const height = window.innerHeight - 100;
 
 let yScale = d3
   .scaleLinear()
@@ -139,7 +142,7 @@ d3.json("multi_set_five.json", function (data) {
       onDataLoad({ nodes: nodeData, edges: linkData });
 
       // TODO: this gets the pulsing, but it makes it unstable...
-      // repeat();
+      //   repeat();
     });
 
   onDataLoad(data);
@@ -171,17 +174,17 @@ function repeat() {
   subset
     .transition() // apply a transition
     .duration(function () {
-      return 500 + Math.random() * 1000; // random duration between 500 and 1500 ms
+      return 200 + Math.random() * 500; // random duration between 500 and 1500 ms
     })
     .attr("r", function () {
-      return 1 + Math.random() * 2; // random radius between 1 and 10
-    })
-    .transition() // apply a second transition
-    .duration(function () {
-      return 500 + Math.random() * 1000; // random duration between 500 and 1500 ms
-    })
-    .attr("r", 1) // change the radius attribute back to 1
-    .on("end", repeat); // when the second transition finishes, restart the function
+      return 1 + Math.random() * 1.5; // random radius between 1 and 10
+    });
+  // .transition() // apply a second transition
+  // .duration(function () {
+  //   return 200 + Math.random() * 500; // random duration between 500 and 1500 ms
+  // });
+  // .attr("r", 1); // change the radius attribute back to 1
+  setTimeout(repeat, 700); // when the second transition finishes, restart the function
 }
 
 function onDataLoad(data) {
