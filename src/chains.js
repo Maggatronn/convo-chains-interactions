@@ -29,9 +29,9 @@ var collections = [150, 114, 1, 3, 24, 27];
 var color = d3.scaleOrdinal().domain([0, 12]).range(topics_color);
 var hoverwave = d3.scaleLinear().domain([0, 200]).range([5, 1]);
 
-const compatibility_threshold = 0.2;
-const bundling_stiffness = 24;
-const step_size = 0.8;
+const compatibility_threshold = 0.15;
+const bundling_stiffness = 1;
+const step_size = 1;
 let bundling;
 
 var simulation = d3
@@ -135,11 +135,11 @@ d3.json("multi_set_five.json").then(function (data) {
   orginalData = data;
   orginalData.links = orginalData.edges;
 
-  bundling = edgeBundling(orginalData, {
-    compatibility_threshold,
-    bundling_stiffness,
-    step_size,
-  });
+  // bundling = edgeBundling(orginalData, {
+  //   compatibility_threshold,
+  //   bundling_stiffness,
+  //   step_size,
+  // });
 
   document
     .getElementById("collectionSelect")
@@ -345,35 +345,37 @@ function onDataLoad(data) {
 
       // TODO:
       // filter the data to just the selected conversation
-      // const selectedNodes = data.nodes.filter(function (d) {
-      //   if (d.conversation === selectedConversation) {
-      //     return true;
-      //   }
-      // });
-      // selectedEdges = data.links.filter(function (d) {
-      //   // check to see if the source or target is in the selected nodes
-      //   const sourceInSelectedNodes = selectedNodes.find(function (node) {
-      //     return node.conversation === d.source.conversation;
-      //   });
-      //   const targetInSelectedNodes = selectedNodes.find(function (node) {
-      //     return node.conversation === d.target.conversation;
-      //   });
-      //   if (sourceInSelectedNodes || targetInSelectedNodes) {
-      //     return true;
-      //   }
-      // });
+      const selectedNodes = data.nodes.filter(function (d) {
+        if (d.conversation === selectedConversation) {
+          return true;
+        }
+      });
+      selectedEdges = data.links.filter(function (d) {
+        // check to see if the source or target is in the selected nodes
+        const sourceInSelectedNodes = selectedNodes.find(function (node) {
+          return node.conversation === d.source.conversation;
+        });
+        const targetInSelectedNodes = selectedNodes.find(function (node) {
+          return node.conversation === d.target.conversation;
+        });
+        if (sourceInSelectedNodes || targetInSelectedNodes) {
+          return true;
+        }
+      });
 
-      // bundling = edgeBundling(
-      //   {
-      //     nodes: selectedNodes,
-      //     links: selectedEdges,
-      //   },
-      //   {
-      //     compatibility_threshold,
-      //     bundling_stiffness,
-      //     step_size,
-      //   }
-      // );
+      bundling = edgeBundling(
+        {
+          nodes: selectedNodes,
+          links: selectedEdges,
+        },
+        {
+          compatibility_threshold,
+          bundling_stiffness,
+          step_size,
+        }
+      );
+      bundling.update();
+      bundledPaths.data(selectedEdges).attr("d", (d) => line(d.path));
 
       d3.select(".nodes")
         .selectAll("circle")
@@ -458,8 +460,10 @@ function onDataLoad(data) {
     //   .attr("x2", (d) => d.target.x)
     //   .attr("y2", (d) => d.target.y);
 
-    bundling.update();
-    bundledPaths.data(linkData).attr("d", (d) => line(d.path));
+    if (bundling) {
+      bundling.update();
+      bundledPaths.data(selectedEdges).attr("d", (d) => line(d.path));
+    }
 
     // link.attr("d", function (d) {
     //   var dx = d.target.x - d.source.x,
