@@ -107,7 +107,7 @@ var slider = d3
   });
 
 let orginalData;
-d3.json("multi_set_five.json", function (data) {
+d3.json("multi_set_five.json").then(function (data) {
   orginalData = data;
   document
     .getElementById("collectionSelect")
