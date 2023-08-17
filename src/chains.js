@@ -196,7 +196,7 @@ function onDataLoad(data) {
     .attr("width", width)
     .attr("height", height)
     .attr("fill", "black")
-    .on("click", function (d) {
+    .on("click", function (event, d) {
       tooltip.transition().duration(500).style("opacity", 0);
       d3.select(".nodes").selectAll("circle").classed("selected", false);
       d3.select(".nodes").selectAll("circle").classed("not-selected", false);
@@ -232,8 +232,8 @@ function onDataLoad(data) {
     .attr("r", 1)
     // .attr("fill", "white")
     // .call(drag(simulation))
-    .on("mouseover", function (d) {
-      d3.select(this).classed("moused-over-node", true);
+    .on("mouseover", function (event, d) {
+      d3.select(event.currentTarget).classed("moused-over-node", true);
       const hoveredConversation = d.conversation;
       d3.select(".nodes")
         .selectAll("circle")
@@ -284,7 +284,7 @@ function onDataLoad(data) {
           }
         });
     })
-    .on("click", function (d) {
+    .on("click", function (event, d) {
       const selectedConversation = d.conversation;
       d3.select(".nodes")
         .selectAll("circle")
@@ -320,8 +320,8 @@ function onDataLoad(data) {
         })
         .attr("fill", "none");
     })
-    .on("mouseout", function (d) {
-      d3.select(this).classed("moused-over-node", false);
+    .on("mouseout", function (event, d) {
+      d3.select(event.currentTarget).classed("moused-over-node", false);
       d3.select(".nodes")
         .selectAll("circle")
         .classed("moused-over-conversation", false);
