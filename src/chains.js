@@ -29,6 +29,11 @@ var collections = [150, 114, 1, 3, 24, 27];
 var color = d3.scaleOrdinal().domain([0, 12]).range(topics_color);
 var hoverwave = d3.scaleLinear().domain([0, 200]).range([5, 1]);
 
+const compatibility_threshold = 0.15;
+const bundling_stiffness = 1;
+const step_size = 1;
+let bundling;
+
 var simulation = d3
   .forceSimulation()
   .force(
@@ -107,8 +112,25 @@ var slider = d3
   });
 
 let orginalData;
-d3.json("multi_set_five.json", function (data) {
+let selectedEdges;
+d3.json("multi_set_five.json").then(function (data) {
+  // TODO: this is a hack to get the data in the right format
+  // update the nodes so that x and y are set
+  data.nodes.forEach(function (d) {
+    d.x = d.rootx;
+    d.y = d.rooty;
+  });
+
   orginalData = data;
+  orginalData.links = orginalData.edges;
+
+  // If you wanted to bundle ALL edges, you could do this:
+  // bundling = edgeBundling(orginalData, {
+  //   compatibility_threshold,
+  //   bundling_stiffness,
+  //   step_size,
+  // });
+
   document
     .getElementById("collectionSelect")
     .addEventListener("change", function () {
@@ -187,39 +209,43 @@ function repeat() {
   setTimeout(repeat, 700); // when the second transition finishes, restart the function
 }
 
+var rect = svg
+  .append("svg:rect")
+  .attr("width", width)
+  .attr("height", height)
+  .attr("fill", "black")
+  .on("click", function (event, d) {
+    tooltip.transition().duration(500).style("opacity", 0);
+    d3.select(".nodes").selectAll("circle").classed("selected", false);
+    d3.select(".nodes").selectAll("circle").classed("not-selected", false);
+    d3.select(".links")
+      .transition()
+      .duration(500)
+      .selectAll("path")
+      .attr("stroke", "none")
+      .style("fill", "none");
+  });
+
 function onDataLoad(data) {
   nodeData = data.nodes;
   linkData = data.edges;
 
-  var rect = svg
-    .append("svg:rect")
-    .attr("width", width)
-    .attr("height", height)
-    .attr("fill", "black")
-    .on("click", function (d) {
-      tooltip.transition().duration(500).style("opacity", 0);
-      d3.select(".nodes").selectAll("circle").classed("selected", false);
-      d3.select(".nodes").selectAll("circle").classed("not-selected", false);
-      d3.select(".links")
-        .transition()
-        .duration(500)
-        .selectAll("path")
-        .attr("stroke", "none")
-        .style("fill", "none");
-    });
+  var gLinks = svg
+    .selectAll("g#bundledLinks")
+    .data([0]) // create one if doesn't exist
+    .join("g")
+    .attr("id", "bundledLinks");
 
-  var link = svg
+  var bundledPaths = gLinks
     .append("g")
     .attr("class", "links")
-    .selectAll("path")
+    .selectAll("path.bundled")
     .data(linkData)
-    .enter()
-    .append("path")
-    // .attr("stroke", function(o){
-    //   return "rgb(0, " + colorScale(o.source.convo_prop_index) + "," + 255 - colorScale(o.source.convo_prop_index) + ")"
-    // })
-    // .attr("stroke-width", 0.05)
+    .join("path")
+    .attr("class", "bundled")
+    .attr("stroke", "#ccc")
     .attr("fill", "none")
+    .attr("stroke-width", 2)
     .attr("stroke", "none");
 
   var node = svg
@@ -232,8 +258,8 @@ function onDataLoad(data) {
     .attr("r", 1)
     // .attr("fill", "white")
     // .call(drag(simulation))
-    .on("mouseover", function (d) {
-      d3.select(this).classed("moused-over-node", true);
+    .on("mouseover", function (event, d) {
+      d3.select(event.currentTarget).classed("moused-over-node", true);
       const hoveredConversation = d.conversation;
       d3.select(".nodes")
         .selectAll("circle")
@@ -284,8 +310,43 @@ function onDataLoad(data) {
           }
         });
     })
-    .on("click", function (d) {
+    .on("click", function (event, d) {
       const selectedConversation = d.conversation;
+
+      // filter the data to just the selected conversation
+      const selectedNodes = nodeData.filter(function (d) {
+        if (d.conversation === selectedConversation) {
+          return true;
+        }
+      });
+      selectedEdges = linkData.filter(function (d) {
+        // check to see if the source or target is in the selected nodes
+        const sourceInSelectedNodes = selectedNodes.find(function (node) {
+          return node.conversation === d.source.conversation;
+        });
+        const targetInSelectedNodes = selectedNodes.find(function (node) {
+          return node.conversation === d.target.conversation;
+        });
+        if (sourceInSelectedNodes || targetInSelectedNodes) {
+          return true;
+        }
+      });
+
+      // update the bundling to just the selected nodes and edges (it's otherwise quite slow)
+      bundling = edgeBundling(
+        {
+          nodes: selectedNodes,
+          links: selectedEdges,
+        },
+        {
+          compatibility_threshold,
+          bundling_stiffness,
+          step_size,
+        }
+      );
+      bundling.update();
+      bundledPaths.data(selectedEdges).attr("d", (d) => line(d.path));
+
       d3.select(".nodes")
         .selectAll("circle")
         .classed("selected", function (o) {
@@ -320,8 +381,8 @@ function onDataLoad(data) {
         })
         .attr("fill", "none");
     })
-    .on("mouseout", function (d) {
-      d3.select(this).classed("moused-over-node", false);
+    .on("mouseout", function (event, d) {
+      d3.select(event.currentTarget).classed("moused-over-node", false);
       d3.select(".nodes")
         .selectAll("circle")
         .classed("moused-over-conversation", false);
@@ -357,42 +418,16 @@ function onDataLoad(data) {
     .attr("transform", "translate(30,30)")
     .call(slider);
 
-  function ticked() {
-    link.attr("d", function (d) {
-      var dx = d.target.x - d.source.x,
-        dy = d.target.y - d.source.y,
-        dr = Math.sqrt(dx * dx + dy * dy); // distance
-      if (dr > 100) {
-        // draw an arc if the nodes are sufficiently far apart
-        return (
-          "M" +
-          d.source.x +
-          "," +
-          d.source.y +
-          "A" +
-          dr +
-          "," +
-          dr +
-          " 0 0,1 " +
-          d.target.x +
-          "," +
-          d.target.y
-        );
-      } else {
-        // draw a straight line if the nodes are too close
-        return (
-          "M" +
-          d.source.x +
-          "," +
-          d.source.y +
-          "L" +
-          d.target.x +
-          "," +
-          d.target.y
-        );
-      }
-    });
+  const line = d3
+    .line()
+    .x((d) => d.x)
+    .y((d) => d.y);
 
+  function ticked() {
+    if (bundling && selectedEdges) {
+      bundling.update();
+      bundledPaths.data(selectedEdges).attr("d", (d) => line(d.path));
+    }
     node.attr("transform", function (d) {
       return "translate(" + d.x + "," + d.y + ")";
     });
