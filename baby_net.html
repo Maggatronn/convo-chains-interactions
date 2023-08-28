@@ -19,8 +19,9 @@
       }
 
       circle {
-        fill: white; /* default color */
+        /* fill: white; /* default color */ */
         opacity: 0.5;
+        r: 1.5;
       }
 
       circle.matched {
@@ -38,7 +39,7 @@
         opacity: 1;
 
         /* transition the opacity of the circle */
-        transition: opacity 0.2s ease-in-out;
+        transition: opacity 0.3s ease-in-out;
       }
 
       circle.moused-over-node {
@@ -47,15 +48,17 @@
       }
 
       circle.selected {
-        fill: #f6b092; /* color for selected nodes */
+        /* fill: #f6b092; /* color for selected nodes */ */
         opacity: 1;
         r: 5;
         /* transition the color of the circle */
-        transition: fill 0.2s ease-in-out;
+        transition: fill 0.3s ease-in-out;
       }
 
       circle.not-selected {
-        r: 1;
+        opacity: 0.5;
+        r: 1.5;
+        transition: fill 0.3s ease-in-out;
       }
     </style>
     <script src="https://d3js.org/d3.v7.min.js"></script>
@@ -70,18 +73,19 @@
   <body>
     <div class="controls">
       <select id="collectionSelect">
-        <option value="all">All Conversation Collections</option>
+        <!-- <option value="all">All Conversation Collections</option> -->
         <!-- Add more options as needed -->
+        <option value="114">114</option>
         <option value="1">1</option>
         <option value="3">3</option>
         <option value="24">24</option>
         <option value="27">27</option>
-        <option value="114">114</option>
         <option value="150">150</option>
       </select>
       <div id="slider"></div>
+      <button type="button" id="button" onClick="changeColor()">Release</button>
       <input type="text" id="search" value="" placeholder="Search" />
     </div>
   </body>
-  <script src="src/chains.js"></script>
+  <script  type="application/javascript" src="src/chains.js"></script>
 </html>

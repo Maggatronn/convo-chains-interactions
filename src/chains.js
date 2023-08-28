@@ -1,9 +1,36 @@
 let nodeData, linkData, link, node, strength;
 
+
+// var SerialPort = require("serialport");
+//
+// const parsers = SerialPort.parsers;
+// const parser = new parsers.Readline({
+//   delimeter: "\r\n"
+// })
+//
+// var port = new SerialPort("/dev/cu.usbmodem14401",{
+//   baudRate: 9600,
+//   dataBits: 8,
+//   parity: 'none',
+//   stopBits: 1,
+//   flowControl: false
+// });
+//
+// port.pipe(parser);
+//
+// parser.on('data', function(data){
+//   console.log(data);
+// })
+
 // const width = 1500;
 // const height = 900;
 const width = window.innerWidth;
-const height = window.innerHeight - 100;
+const height = window.innerHeight- 100;
+
+const line = d3
+  .line()
+  .x((d) => d.x)
+  .y((d) => d.y);
 
 let yScale = d3
   .scaleLinear()
@@ -12,16 +39,21 @@ let yScale = d3
   .range([0, height]);
 let xScale = d3.scaleLinear().domain([0, 1]).range([0, width]);
 
+var reScaleX = d3.scaleLinear().domain([0, 1200]).range([0, width]);
+var reScaleY = d3.scaleLinear().domain([0, 900]).range([0, height]);
+let valScale = d3.scaleLinear().domain([0, 1]).range([1, 0]);
+
 var topics_color = [
+
   "#F07800",
   "#E10901",
   "#F78554",
   "#CD51ED",
+  "#6B0CF7",
   "#905FE1",
   "#F70CAE",
   "#B10CED",
   "#CA00F0",
-  "#6B0CF7",
   "#0009E0",
   "#E16158",
 ];
@@ -46,7 +78,7 @@ var simulation = d3
       })
   )
   // .force("charge", d3.forceManyBody().strength(-1))
-  .force("center", d3.forceCenter(width * 0.5, height * 0.5));
+  .force("center", d3.forceCenter(width * 0.5, (height) * 0.5))
 
 const svg = d3
   .select("body")
@@ -72,6 +104,37 @@ var tooltip = d3
 simulation.force("y", d3.forceY().y(0).strength(0));
 simulation.force("x", d3.forceX().x(0).strength(0));
 
+
+var changeColor = function(color){
+  simulation
+    .force(
+    "link",
+    d3
+      .forceLink()
+      .strength(10)
+      .distance(10)
+  )
+  .force("charge", d3.forceManyBody().strength(-0.5))
+  // .force("center", d3.forceCenter(width * 0.5, (height) * 0.5))
+  .force(
+    "y",
+    d3
+      .forceY()
+      .y(0)
+      .strength(0)
+  )
+  .force(
+    "x",
+    d3
+      .forceX()
+      .x(0)
+      .strength(0)
+  )
+  .alpha(1).restart();
+  // simulation.nodes(nodeData).on("tick", ticked);
+}
+
+
 var slider = d3
   .sliderHorizontal()
   .min(0)
@@ -80,13 +143,12 @@ var slider = d3
   .width(300)
   .displayValue(false)
   .on("onchange", (val) => {
-    let valScale = d3.scaleLinear().domain([0, 1]).range([1, 0]);
     simulation.force(
       "y",
       d3
         .forceY()
         .y(function (d) {
-          return d.rooty * val + yScale(d.conversation) * valScale(val);
+          return reScaleY(d.rooty) * val + yScale(d.conversation) * valScale(val);
         })
         .strength(1)
     );
@@ -95,10 +157,11 @@ var slider = d3
       d3
         .forceX()
         .x(function (d) {
-          return d.rootx * val + xScale(d.convo_prop_index) * valScale(val);
+          return reScaleX(d.rootx) * val + xScale(d.convo_prop_index) * valScale(val);
         })
         .strength(1)
     );
+
     simulation.force(
       "link",
       d3
@@ -108,8 +171,19 @@ var slider = d3
           return d.id;
         })
     );
+
+    simulation.force("center", d3.forceCenter(width * 0.5, (height) * 0.5).strength(0))
     simulation.alpha(1).restart();
+
   });
+
+d3.select("#slider")
+  .append("svg")
+  .attr("width", 500)
+  .attr("height", 80)
+  .append("g")
+  .attr("transform", "translate(30,30)")
+  .call(slider);
 
 let orginalData;
 let selectedEdges;
@@ -131,15 +205,43 @@ d3.json("multi_set_five.json").then(function (data) {
   //   step_size,
   // });
 
+  var selectedCollection = 114
+  nodeData = orginalData.nodes.filter(function (d) {
+    if (
+      // selectedCollection === "all" ||
+      d.collection == selectedCollection
+    ) {
+      return d;
+    }
+  });
+  linkData = orginalData.links.filter(function (d) {
+    if (
+      // selectedCollection === "all" ||
+      d.collection == selectedCollection
+    ) {
+      return d;
+    }
+  });
+
   document
     .getElementById("collectionSelect")
     .addEventListener("change", function () {
+      // remove the slider (it'll get re-added later)
+      // d3.select("#slider").select("svg").remove();
+
+      // remove all edges and nodes
+      d3.select(".links").transition()
+      .duration(500).remove();
+      d3.select(".nodes").transition()
+      .duration(500).remove();
+
+
       let selectedCollection = this.value;
 
       // Filter nodeData and linkData based on the selected collection
       nodeData = orginalData.nodes.filter(function (d) {
         if (
-          selectedCollection === "all" ||
+          // selectedCollection === "all" ||
           d.collection == selectedCollection
         ) {
           return d;
@@ -147,27 +249,20 @@ d3.json("multi_set_five.json").then(function (data) {
       });
       linkData = orginalData.edges.filter(function (d) {
         if (
-          selectedCollection === "all" ||
+          // selectedCollection === "all" ||
           d.collection == selectedCollection
         ) {
           return d;
         }
       });
-
-      // remove the slider (it'll get re-added later)
-      d3.select("#slider").select("svg").remove();
-
-      // remove all edges and nodes
-      d3.select(".links").remove();
-      d3.select(".nodes").remove();
-
       onDataLoad({ nodes: nodeData, edges: linkData });
 
       // TODO: this gets the pulsing, but it makes it unstable...
       //   repeat();
     });
 
-  onDataLoad(data);
+  // onDataLoad(data);
+  onDataLoad({ nodes: nodeData, edges: linkData });
 });
 
 let toFind = "machine";
@@ -215,7 +310,14 @@ var rect = svg
   .attr("height", height)
   .attr("fill", "black")
   .on("click", function (event, d) {
-    tooltip.transition().duration(500).style("opacity", 0);
+
+    tooltip.transition().duration(500)
+      .style("opacity", 0)
+      // .style("left", "0px")
+      // .style("top", "0px")
+      .attr('width', 0)
+      .attr('height', 0)
+      .text(null)
     d3.select(".nodes").selectAll("circle").classed("selected", false);
     d3.select(".nodes").selectAll("circle").classed("not-selected", false);
     d3.select(".links")
@@ -223,7 +325,14 @@ var rect = svg
       .duration(500)
       .selectAll("path")
       .attr("stroke", "none")
-      .style("fill", "none");
+      .style("fill", "none")
+      .attr("d", function(f) {
+        if (f.d > 0){line(0, 0)}
+      })
+
+    // console.log(d.path)
+
+
   });
 
 function onDataLoad(data) {
@@ -246,7 +355,8 @@ function onDataLoad(data) {
     .attr("stroke", "#ccc")
     .attr("fill", "none")
     .attr("stroke-width", 2)
-    .attr("stroke", "none");
+    .attr("stroke", (d) => d.group)
+    // .attr("d", line(0, 0));
 
   var node = svg
     .append("g")
@@ -256,7 +366,10 @@ function onDataLoad(data) {
     .enter()
     .append("circle")
     .attr("r", 1)
-    // .attr("fill", "white")
+    .attr("fill", function (o) {
+      return color(o.group);
+    })
+
     // .call(drag(simulation))
     .on("mouseover", function (event, d) {
       d3.select(event.currentTarget).classed("moused-over-node", true);
@@ -275,22 +388,23 @@ function onDataLoad(data) {
         .style("color", "white")
         .style("padding", "10px")
         .html(nodeData)
-        .style("left", String(width / 2 - 250) + "px")
-        .style("top", String(height - 50) + "px")
-        // .style("text-anchor", "middle")
+        .style("left", String(d.x +10)  + "px")
+        .style("top", String(d.y + 5) + "px")
+        .style("text-anchor", "top")
         // .attr('y', '500')
         // .attr('x', '600')
         // .style("text-anchor", "middle")
         .text(d.words)
-        .style("background", "none")
+        .style("background", "black")
+        .style("background-opacity", "0.3")
         .style("width", tooltipWidth);
       d3.select(".nodes")
         .transition()
         .duration(500)
         .selectAll("circle")
-        // .attr("fill", function (o) {
-        //   return color(o.kmeans);
-        // })
+        .attr("fill", function (o) {
+          return color(o.group);
+        })
         // .attr("r", function(o){ if (getDistance(o.rootx, d.rootx, o.rooty, d.rooty) < 50){
         //   return getDistance(o.rootx, d.rootx, o.rooty, d.rooty)/50 }
         //   else {return 3}
@@ -310,7 +424,71 @@ function onDataLoad(data) {
           }
         });
     })
-    .on("click", function (event, d) {
+
+    .on("mouseout", function (event, d) {
+      d3.select(event.currentTarget).classed("moused-over-node", false);
+      d3.select(".nodes")
+        .selectAll("circle")
+        .classed("moused-over-conversation", false);
+    });
+
+  const drag = d3.drag().on("start", dragstart).on("drag", dragged);
+
+  node.call(drag).on("click", click);
+
+  simulation.nodes(nodeData).on("tick", ticked);
+
+  simulation.force("link").links(linkData);
+  simulation.force(
+    "x",
+    d3
+      .forceX()
+      .x(function (d) {
+        return d.rootx;
+      })
+      .strength(0)
+  );
+
+  simulation.force(
+    "y",
+    d3
+      .forceY()
+      .y(function (d) {
+        return d.rooty;
+      })
+      .strength(0)
+  );
+
+
+
+  d3.select("#button")
+    .append("svg")
+    .attr("width", 10)
+    .attr("height", 10)
+    .append("g")
+    // .attr("transform", "translate(30,30)")
+
+  function ticked() {
+    if (bundling && selectedEdges) {
+      bundling.update();
+      bundledPaths.data(selectedEdges).attr("d", (d) => line(d.path));
+    }
+    node.attr("transform", function (d) {
+      return "translate(" + d.x + "," + d.y + ")";
+    });
+  }
+
+  function clamp(x, lo, hi) {
+    return x < lo ? lo : x > hi ? hi : x;
+  }
+
+  function click(event, d) {
+    console.log('clickeed')
+    delete d.fx;
+    delete d.fy;
+    d3.select(this).classed("fixed", false);
+
+      console.log(d.group, color(d.group))
       const selectedConversation = d.conversation;
 
       // filter the data to just the selected conversation
@@ -351,22 +529,32 @@ function onDataLoad(data) {
         .selectAll("circle")
         .classed("selected", function (o) {
           return o.conversation === selectedConversation;
-        });
+        })
+        // .attr("opacity", 0.5)
       d3.select(".nodes")
         .selectAll("circle")
         .classed("not-selected", function (o) {
           return o.conversation !== selectedConversation;
         });
 
+      d3.select(".nodes")
+        .selectAll("circle")
+        .classed("opacity", function (o) { if (o.conversation !== selectedConversation){
+            return 0.5
+          } else {
+            return 1
+          }
+        });
+
       d3.select(".links")
         .transition()
         .duration(500)
         .selectAll("path")
-        .attr("stroke-opacity", 1)
+        .attr("stroke-opacity", 0.5)
         .attr("stroke", function (o) {
           if (o.source.conversation === d.conversation) {
             // return "rgb(" + colorScale(o.source.convo_prop_index) + ","+ colorScale(o.source.convo_prop_index) + "," + colorScale(o.source.convo_prop_index) + ")"
-            return color(o.source.kmeans);
+            return color(o.source.group);
             // return "white"
           } else {
             return "none";
@@ -374,62 +562,24 @@ function onDataLoad(data) {
         })
         .attr("stroke-width", function (o) {
           if (o.source.conversation === d.conversation) {
-            return 1;
+            return 3;
           } else {
             return 0;
           }
         })
-        .attr("fill", "none");
-    })
-    .on("mouseout", function (event, d) {
-      d3.select(event.currentTarget).classed("moused-over-node", false);
-      d3.select(".nodes")
-        .selectAll("circle")
-        .classed("moused-over-conversation", false);
-    });
-  simulation.nodes(nodeData).on("tick", ticked);
+        .attr("fill", "none")
 
-  simulation.force("link").links(linkData);
-  simulation.force(
-    "x",
-    d3
-      .forceX()
-      .x(function (d) {
-        return d.rootx;
-      })
-      .strength(0)
-  );
-
-  simulation.force(
-    "y",
-    d3
-      .forceY()
-      .y(function (d) {
-        return d.rooty;
-      })
-      .strength(0)
-  );
-
-  d3.select("#slider")
-    .append("svg")
-    .attr("width", 500)
-    .attr("height", 80)
-    .append("g")
-    .attr("transform", "translate(30,30)")
-    .call(slider);
-
-  const line = d3
-    .line()
-    .x((d) => d.x)
-    .y((d) => d.y);
-
-  function ticked() {
-    if (bundling && selectedEdges) {
-      bundling.update();
-      bundledPaths.data(selectedEdges).attr("d", (d) => line(d.path));
-    }
-    node.attr("transform", function (d) {
-      return "translate(" + d.x + "," + d.y + ")";
-    });
+    // simulation.alpha(1).restart();
   }
+
+  function dragstart() {
+    d3.select(this).classed("fixed", true);
+  }
+
+  function dragged(event, d) {
+    d.fx = clamp(event.x, 0, width);
+    d.fy = clamp(event.y, 0, height);
+    simulation.alpha(1).restart();
+  }
+
 }
