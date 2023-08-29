@@ -1,6 +1,5 @@
 let nodeData, linkData, link, node, strength;
 
-
 // var SerialPort = require("serialport");
 //
 // const parsers = SerialPort.parsers;
@@ -25,7 +24,7 @@ let nodeData, linkData, link, node, strength;
 // const width = 1500;
 // const height = 900;
 const width = window.innerWidth;
-const height = window.innerHeight- 100;
+const height = window.innerHeight - 100;
 
 const line = d3
   .line()
@@ -44,7 +43,6 @@ var reScaleY = d3.scaleLinear().domain([0, 900]).range([0, height]);
 let valScale = d3.scaleLinear().domain([0, 1]).range([1, 0]);
 
 var topics_color = [
-
   "#F07800",
   "#E10901",
   "#F78554",
@@ -78,7 +76,7 @@ var simulation = d3
       })
   )
   // .force("charge", d3.forceManyBody().strength(-1))
-  .force("center", d3.forceCenter(width * 0.5, (height) * 0.5))
+  .force("center", d3.forceCenter(width * 0.5, height * 0.5));
 
 const svg = d3
   .select("body")
@@ -104,36 +102,17 @@ var tooltip = d3
 simulation.force("y", d3.forceY().y(0).strength(0));
 simulation.force("x", d3.forceX().x(0).strength(0));
 
-
-var changeColor = function(color){
+var changeColor = function (color) {
   simulation
-    .force(
-    "link",
-    d3
-      .forceLink()
-      .strength(10)
-      .distance(10)
-  )
-  .force("charge", d3.forceManyBody().strength(-0.5))
-  // .force("center", d3.forceCenter(width * 0.5, (height) * 0.5))
-  .force(
-    "y",
-    d3
-      .forceY()
-      .y(0)
-      .strength(0)
-  )
-  .force(
-    "x",
-    d3
-      .forceX()
-      .x(0)
-      .strength(0)
-  )
-  .alpha(1).restart();
+    .force("link", d3.forceLink().strength(10).distance(10))
+    .force("charge", d3.forceManyBody().strength(-0.5))
+    // .force("center", d3.forceCenter(width * 0.5, (height) * 0.5))
+    .force("y", d3.forceY().y(0).strength(0))
+    .force("x", d3.forceX().x(0).strength(0))
+    .alpha(1)
+    .restart();
   // simulation.nodes(nodeData).on("tick", ticked);
-}
-
+};
 
 var slider = d3
   .sliderHorizontal()
@@ -148,7 +127,9 @@ var slider = d3
       d3
         .forceY()
         .y(function (d) {
-          return reScaleY(d.rooty) * val + yScale(d.conversation) * valScale(val);
+          return (
+            reScaleY(d.rooty) * val + yScale(d.conversation) * valScale(val)
+          );
         })
         .strength(1)
     );
@@ -157,7 +138,9 @@ var slider = d3
       d3
         .forceX()
         .x(function (d) {
-          return reScaleX(d.rootx) * val + xScale(d.convo_prop_index) * valScale(val);
+          return (
+            reScaleX(d.rootx) * val + xScale(d.convo_prop_index) * valScale(val)
+          );
         })
         .strength(1)
     );
@@ -172,9 +155,11 @@ var slider = d3
         })
     );
 
-    simulation.force("center", d3.forceCenter(width * 0.5, (height) * 0.5).strength(0))
+    simulation.force(
+      "center",
+      d3.forceCenter(width * 0.5, height * 0.5).strength(0)
+    );
     simulation.alpha(1).restart();
-
   });
 
 d3.select("#slider")
@@ -205,7 +190,7 @@ d3.json("multi_set_five.json").then(function (data) {
   //   step_size,
   // });
 
-  var selectedCollection = 114
+  var selectedCollection = 114;
   nodeData = orginalData.nodes.filter(function (d) {
     if (
       // selectedCollection === "all" ||
@@ -230,11 +215,8 @@ d3.json("multi_set_five.json").then(function (data) {
       // d3.select("#slider").select("svg").remove();
 
       // remove all edges and nodes
-      d3.select(".links").transition()
-      .duration(500).remove();
-      d3.select(".nodes").transition()
-      .duration(500).remove();
-
+      d3.select(".links").transition().duration(500).remove();
+      d3.select(".nodes").transition().duration(500).remove();
 
       let selectedCollection = this.value;
 
@@ -256,6 +238,8 @@ d3.json("multi_set_five.json").then(function (data) {
         }
       });
       onDataLoad({ nodes: nodeData, edges: linkData });
+
+      bundling = undefined; // reset the bundling
 
       // TODO: this gets the pulsing, but it makes it unstable...
       //   repeat();
@@ -304,20 +288,32 @@ function repeat() {
   setTimeout(repeat, 700); // when the second transition finishes, restart the function
 }
 
+let bundledPaths;
+// clear out bundling
+const removeBundling = () => {
+  bundling = undefined; // reset the bundling
+  if (bundledPaths) {
+    bundledPaths.data([]).attr("d", (d) => line(d.path));
+  }
+};
+
 var rect = svg
   .append("svg:rect")
   .attr("width", width)
   .attr("height", height)
   .attr("fill", "black")
   .on("click", function (event, d) {
+    removeBundling();
 
-    tooltip.transition().duration(500)
+    tooltip
+      .transition()
+      .duration(500)
       .style("opacity", 0)
       // .style("left", "0px")
       // .style("top", "0px")
-      .attr('width', 0)
-      .attr('height', 0)
-      .text(null)
+      .attr("width", 0)
+      .attr("height", 0)
+      .text(null);
     d3.select(".nodes").selectAll("circle").classed("selected", false);
     d3.select(".nodes").selectAll("circle").classed("not-selected", false);
     d3.select(".links")
@@ -326,13 +322,13 @@ var rect = svg
       .selectAll("path")
       .attr("stroke", "none")
       .style("fill", "none")
-      .attr("d", function(f) {
-        if (f.d > 0){line(0, 0)}
-      })
+      .attr("d", function (f) {
+        if (f.d > 0) {
+          line(0, 0);
+        }
+      });
 
     // console.log(d.path)
-
-
   });
 
 function onDataLoad(data) {
@@ -345,7 +341,7 @@ function onDataLoad(data) {
     .join("g")
     .attr("id", "bundledLinks");
 
-  var bundledPaths = gLinks
+  bundledPaths = gLinks
     .append("g")
     .attr("class", "links")
     .selectAll("path.bundled")
@@ -355,8 +351,8 @@ function onDataLoad(data) {
     .attr("stroke", "#ccc")
     .attr("fill", "none")
     .attr("stroke-width", 2)
-    .attr("stroke", (d) => d.group)
-    // .attr("d", line(0, 0));
+    .attr("stroke", (d) => d.group);
+  // .attr("d", line(0, 0));
 
   var node = svg
     .append("g")
@@ -388,7 +384,7 @@ function onDataLoad(data) {
         .style("color", "white")
         .style("padding", "10px")
         .html(nodeData)
-        .style("left", String(d.x +10)  + "px")
+        .style("left", String(d.x + 10) + "px")
         .style("top", String(d.y + 5) + "px")
         .style("text-anchor", "top")
         // .attr('y', '500')
@@ -459,14 +455,12 @@ function onDataLoad(data) {
       .strength(0)
   );
 
-
-
   d3.select("#button")
     .append("svg")
     .attr("width", 10)
     .attr("height", 10)
-    .append("g")
-    // .attr("transform", "translate(30,30)")
+    .append("g");
+  // .attr("transform", "translate(30,30)")
 
   function ticked() {
     if (bundling && selectedEdges) {
@@ -474,7 +468,7 @@ function onDataLoad(data) {
       bundledPaths.data(selectedEdges).attr("d", (d) => line(d.path));
     }
     node.attr("transform", function (d) {
-      return "translate(" + d.x + "," + d.y + ")";
+      return `translate(${d.x},${d.y})`;
     });
   }
 
@@ -483,91 +477,91 @@ function onDataLoad(data) {
   }
 
   function click(event, d) {
-    console.log('clickeed')
+    console.log("clickeed");
     delete d.fx;
     delete d.fy;
     d3.select(this).classed("fixed", false);
 
-      console.log(d.group, color(d.group))
-      const selectedConversation = d.conversation;
+    // console.log(d.group, color(d.group));
+    const selectedConversation = d.conversation;
 
-      // filter the data to just the selected conversation
-      const selectedNodes = nodeData.filter(function (d) {
-        if (d.conversation === selectedConversation) {
-          return true;
+    // filter the data to just the selected conversation
+    const selectedNodes = nodeData.filter(function (d) {
+      if (d.conversation === selectedConversation) {
+        return true;
+      }
+    });
+    selectedEdges = linkData.filter(function (d) {
+      // check to see if the source or target is in the selected nodes
+      const sourceInSelectedNodes = selectedNodes.find(function (node) {
+        return node.conversation === d.source.conversation;
+      });
+      const targetInSelectedNodes = selectedNodes.find(function (node) {
+        return node.conversation === d.target.conversation;
+      });
+      return sourceInSelectedNodes || targetInSelectedNodes;
+    });
+
+    // update the bundling to just the selected nodes and edges (it's otherwise quite slow)
+    bundling = edgeBundling(
+      {
+        nodes: selectedNodes,
+        links: selectedEdges,
+      },
+      {
+        compatibility_threshold,
+        bundling_stiffness,
+        step_size,
+        subdivision_rate: 2.3,
+      }
+    );
+    bundling.update();
+    bundledPaths.data(selectedEdges).attr("d", (d) => line(d.path));
+
+    d3.select(".nodes")
+      .selectAll("circle")
+      .classed("selected", function (o) {
+        return o.conversation === selectedConversation;
+      });
+    // .attr("opacity", 0.5)
+    d3.select(".nodes")
+      .selectAll("circle")
+      .classed("not-selected", function (o) {
+        return o.conversation !== selectedConversation;
+      });
+
+    d3.select(".nodes")
+      .selectAll("circle")
+      .classed("opacity", function (o) {
+        if (o.conversation !== selectedConversation) {
+          return 0.5;
+        } else {
+          return 1;
         }
       });
-      selectedEdges = linkData.filter(function (d) {
-        // check to see if the source or target is in the selected nodes
-        const sourceInSelectedNodes = selectedNodes.find(function (node) {
-          return node.conversation === d.source.conversation;
-        });
-        const targetInSelectedNodes = selectedNodes.find(function (node) {
-          return node.conversation === d.target.conversation;
-        });
-        if (sourceInSelectedNodes || targetInSelectedNodes) {
-          return true;
+
+    d3.select(".links")
+      .transition()
+      .duration(500)
+      .selectAll("path")
+      .attr("stroke-opacity", 0.5)
+      .attr("stroke", function (o) {
+        if (o.source.conversation === d.conversation) {
+          // return "rgb(" + colorScale(o.source.convo_prop_index) + ","+ colorScale(o.source.convo_prop_index) + "," + colorScale(o.source.convo_prop_index) + ")"
+          return color(o.source.group);
+          // return "white"
+        } else {
+          return "none";
         }
-      });
-
-      // update the bundling to just the selected nodes and edges (it's otherwise quite slow)
-      bundling = edgeBundling(
-        {
-          nodes: selectedNodes,
-          links: selectedEdges,
-        },
-        {
-          compatibility_threshold,
-          bundling_stiffness,
-          step_size,
+      })
+      .attr("stroke-width", function (o) {
+        if (o.source.conversation === d.conversation) {
+          return 3;
+        } else {
+          return 0;
         }
-      );
-      bundling.update();
-      bundledPaths.data(selectedEdges).attr("d", (d) => line(d.path));
-
-      d3.select(".nodes")
-        .selectAll("circle")
-        .classed("selected", function (o) {
-          return o.conversation === selectedConversation;
-        })
-        // .attr("opacity", 0.5)
-      d3.select(".nodes")
-        .selectAll("circle")
-        .classed("not-selected", function (o) {
-          return o.conversation !== selectedConversation;
-        });
-
-      d3.select(".nodes")
-        .selectAll("circle")
-        .classed("opacity", function (o) { if (o.conversation !== selectedConversation){
-            return 0.5
-          } else {
-            return 1
-          }
-        });
-
-      d3.select(".links")
-        .transition()
-        .duration(500)
-        .selectAll("path")
-        .attr("stroke-opacity", 0.5)
-        .attr("stroke", function (o) {
-          if (o.source.conversation === d.conversation) {
-            // return "rgb(" + colorScale(o.source.convo_prop_index) + ","+ colorScale(o.source.convo_prop_index) + "," + colorScale(o.source.convo_prop_index) + ")"
-            return color(o.source.group);
-            // return "white"
-          } else {
-            return "none";
-          }
-        })
-        .attr("stroke-width", function (o) {
-          if (o.source.conversation === d.conversation) {
-            return 3;
-          } else {
-            return 0;
-          }
-        })
-        .attr("fill", "none")
+      })
+      .attr("fill", "none");
 
     // simulation.alpha(1).restart();
   }
@@ -581,5 +575,4 @@ function onDataLoad(data) {
     d.fy = clamp(event.y, 0, height);
     simulation.alpha(1).restart();
   }
-
 }
