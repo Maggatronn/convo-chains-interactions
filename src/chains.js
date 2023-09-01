@@ -1,25 +1,32 @@
 let nodeData, linkData, link, node, strength;
 
-// var SerialPort = require("serialport");
-//
+const { SerialPort } = require("serialport");
+
+async function listSerialPorts() {
+  await SerialPort.list().then((ports, err) => {
+    console.log("ports", ports);
+  });
+}
+listSerialPorts();
+
 // const parsers = SerialPort.parsers;
 // const parser = new parsers.Readline({
-//   delimeter: "\r\n"
-// })
-//
-// var port = new SerialPort("/dev/cu.usbmodem14401",{
+//   delimeter: "\r\n",
+// });
+
+// var port = new SerialPort("/dev/cu.usbmodem14401", {
 //   baudRate: 9600,
 //   dataBits: 8,
-//   parity: 'none',
+//   parity: "none",
 //   stopBits: 1,
-//   flowControl: false
+//   flowControl: false,
 // });
-//
+
 // port.pipe(parser);
-//
-// parser.on('data', function(data){
+
+// parser.on("data", function (data) {
 //   console.log(data);
-// })
+// });
 
 // const width = 1500;
 // const height = 900;
